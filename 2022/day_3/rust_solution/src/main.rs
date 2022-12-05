@@ -32,10 +32,44 @@ fn accumate_priority(contents: &str) -> u32 {
         .sum()
 }
 
+fn to_sets_of_three(contents: &str) -> Vec<Vec<&str>> {
+    let mut sets_of_three = vec![];
+    let lines: Vec<&str> = contents.lines().collect();
+    for idx in (0..lines.len()).step_by(3) {
+        sets_of_three.push(vec![lines[idx], lines[idx + 1], lines[idx + 2]])
+    }
+    sets_of_three
+}
+
+fn common_in_set(sets: Vec<&str>) -> char {
+    let mut iterator = sets
+        .iter()
+        .map(|str| str.chars().collect::<HashSet<char>>());
+    let intersection: HashSet<char> = iterator
+        .next()
+        .map(|set| {
+            iterator.fold(set, |set1, set2| {
+                set1.intersection(&set2).copied().collect()
+            })
+        })
+        .unwrap();
+    intersection.iter().next().unwrap().clone()
+}
+
+fn accumulate_badges(contents: &str) -> u32 {
+    let sets = to_sets_of_three(contents);
+    sets.iter()
+        .map(|s| common_in_set(s.to_vec()))
+        .map(|chr| get_priority(chr))
+        .sum()
+}
+
 fn main() {
     let contents = fs::read_to_string("../input").expect("Missing input file");
     let priority_sum = accumate_priority(&contents);
     println!("The sum of common priorities is {}", priority_sum);
+    let badge_sum = accumulate_badges(&contents);
+    println!("The sum of badge priorities is {}", badge_sum);
 }
 
 #[cfg(test)]
