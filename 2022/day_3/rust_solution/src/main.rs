@@ -1,4 +1,5 @@
-use std::{collections::HashSet, fs};
+use std::fs;
+use std::collections::HashSet;
 
 fn get_priority(chr: char) -> u32 {
     let chr = chr as u32;
