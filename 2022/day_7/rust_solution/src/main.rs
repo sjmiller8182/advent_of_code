@@ -161,7 +161,7 @@ fn get_sizes(tree: &Rc<RefCell<TreeNode>>, sizes: &mut Vec<(u64, String)>) -> ()
 }
 
 fn main() {
-    let contents = fs::read_to_string("./input.txt").expect("Missing input file");
+    let contents = fs::read_to_string("../input.txt").expect("Missing input file");
     let tree = build_tree(&contents);
 
     let mut sizes: Vec<(u64, String)> = vec![];
