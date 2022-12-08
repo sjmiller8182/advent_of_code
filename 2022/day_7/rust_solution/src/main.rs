@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, vec};
 
 #[derive(Debug, PartialEq)]
 enum CommandKind {
@@ -145,10 +145,32 @@ fn build_tree(contents: &str) -> Rc<RefCell<TreeNode>> {
 
 }
 
+fn get_sizes(tree: &Rc<RefCell<TreeNode>>) -> Vec<u64> {
+    let mut sizes = vec![];
+
+    let file_size: u64 = tree.borrow_mut().files.iter().map(|f| f.size).sum();
+
+    if tree.borrow_mut().childern.len() == 0 {
+        return vec![file_size]
+    } else {
+        //get size of each child
+        for c in &tree.borrow_mut().childern {
+            sizes.append(&mut get_sizes(c));
+        }
+        sizes.push(sizes.iter().sum::<u64>() + file_size);
+        sizes
+    }
+}
+
 fn main() {
     let contents = fs::read_to_string("./sample_input.txt").expect("Missing input file");
     let mut tree = build_tree(&contents);
-    println!("{:?}", tree.borrow_mut().get_size())
+    println!("{:?}", tree.borrow_mut().get_size());
+    let sizes = get_sizes(&tree);
+    println!("{:?}", sizes);
+
+    let totals:u64 = sizes.iter().filter(|s| *s <= &100000).sum();
+    println!("{}", totals)
 }
 
 #[cfg(test)]
