@@ -108,7 +108,7 @@ fn build_tree(contents: &str) -> Rc<RefCell<TreeNode>> {
     let mut lines = contents.lines();
 
     // get the initial cd / command
-    let initial = parse_line(lines.next().unwrap());
+    let _ = parse_line(lines.next().unwrap());
 
     //Line::Command(intial) = parse_line(lines.next().unwrap())
     let root = Rc::new(RefCell::new(TreeNode::new("/".to_string())));
@@ -147,65 +147,40 @@ fn build_tree(contents: &str) -> Rc<RefCell<TreeNode>> {
     root
 }
 
-fn get_sizes(tree: &Rc<RefCell<TreeNode>>) -> Vec<(u64, String)> {
-    let mut sizes = vec![];
 
-    let file_size: u64 = tree.borrow_mut().files.iter().map(|f| f.size).sum();
-
-    if tree.borrow_mut().childern.len() == 0 {
-        return vec![(file_size, tree.borrow_mut().name.clone())];
-    } else {
-        //get size of each child
-        for c in &tree.borrow_mut().childern {
-            sizes.append(&mut get_sizes(c));
-        }
-        let current_size: u64 = sizes.iter().map(|t| t.0).sum::<u64>() + file_size;
-        sizes.push((current_size, tree.borrow_mut().name.clone()));
-        sizes
-    }
-}
-
-fn get_sizes_2(tree: &Rc<RefCell<TreeNode>>, sizes: &mut Vec<(u64, String)>) -> () {
+fn get_sizes(tree: &Rc<RefCell<TreeNode>>, sizes: &mut Vec<(u64, String)>) -> () {
     sizes.push(tree.borrow_mut().get_size());
     if tree.borrow_mut().childern.len() == 0 {
         return ();
     } else {
         //get size of each child
         for c in &tree.borrow_mut().childern {
-            get_sizes_2(c, sizes)
+            get_sizes(c, sizes)
         }
     }
 }
 
 fn main() {
-    let contents = fs::read_to_string("./sample_input.txt").expect("Missing input file");
+    let contents = fs::read_to_string("./input.txt").expect("Missing input file");
     let tree = build_tree(&contents);
 
-    let sizes = get_sizes(&tree);
+    let mut sizes: Vec<(u64, String)> = vec![];
+    get_sizes(&tree, &mut sizes);
 
     let totals: u64 = sizes.iter().filter(|s| s.0 <= 100000).map(|t| t.0).sum();
     println!("Part 1: {}", totals); // 1084134
 
     let (outer_size, _) = tree.borrow_mut().get_size();
-    println!("Outer size \"/\": {}", outer_size);
     let total_free: u64 = 70000000 - outer_size;
-    println!("Current free space: {}", total_free);
     let total_needed = 30000000 - total_free;
-    println!("Total Needed: {:?}", total_needed);
-
-    //let mut filtered:Vec<_> = sizes.iter().filter(|s| s.0 >= total_needed).collect();
-    //let mut filtered: Vec<&(u64, String)> = sizes.iter().filter(|s| s.0 <= 30000000).collect();
-    //filtered.sort_by(|a, b| a.0.cmp(&b.0));
-    //println!("Part 2: {:?}", filtered);
 
     let mut sizes: Vec<(u64, String)> = vec![];
-    get_sizes_2(&tree, &mut sizes);
+    get_sizes(&tree, &mut sizes);
     sizes.sort_by(|a, b| a.0.cmp(&b.0));
-    //println!("Part 2: {:?}", sizes)
 
     let mut filtered: Vec<_> = sizes.iter().filter(|s| s.0 >= total_needed).collect();
     filtered.sort_by(|a, b| a.0.cmp(&b.0));
-    println!("Part 2: {:?}", filtered);
+    println!("Part 2: {:?}", filtered.first().unwrap().0);
 }
 
 #[cfg(test)]
