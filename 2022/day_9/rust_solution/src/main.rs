@@ -1,5 +1,4 @@
-
-use std::{fs, collections::HashSet, vec};
+use std::{collections::HashSet, fs, vec};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 enum Move {
@@ -36,7 +35,7 @@ impl Move {
             },
             Move::Right(value) => match value {
                 0 => vec![],
-                _ =>vec![Move::Right(1); value.abs() as usize],
+                _ => vec![Move::Right(1); value.abs() as usize],
             },
             Move::Left(value) => match value {
                 0 => vec![],
@@ -97,7 +96,7 @@ impl Tail {
         Tail {
             x: 0,
             y: 0,
-            history: vec![(0,0)],
+            history: vec![(0, 0)],
         }
     }
 
@@ -110,7 +109,10 @@ impl Tail {
     }
 
     fn like_head(&self) -> Head {
-        Head {x: self.x, y: self.y}
+        Head {
+            x: self.x,
+            y: self.y,
+        }
     }
 
     fn too_far_away(&self, head: &Head) -> bool {
@@ -143,13 +145,32 @@ impl Tail {
         self.history.push((self.x, self.y));
     }
 
+    fn follow_it(&mut self, head: &Head) {
+        let diff_x = head.x - self.x;
+        let diff_y = head.y - self.y;
+        if diff_x == 0 {
+            if diff_y > 0 {
+                self.y += 1
+            } else {
+                self.y -= 1
+            };
+        } else {
+            if diff_x > 0 {
+                self.x += 1
+            } else {
+                self.x -= 1
+            }
+        }
+        self.history.push((self.x, self.y));
+    }
+
     fn follow(&mut self, head: &Head, direction: Move) {
         match [head.x - self.x, head.y - self.y]
             .iter()
             .any(|cord| cord.abs() == 0)
         {
             // take a normal step here
-            true => self.move_it(direction),
+            true => self.follow_it(&head),
             // take a diag step here
             false => {
                 let diff_x = head.x - self.x;
@@ -206,16 +227,20 @@ impl Grid {
         let mut new_grid = Grid::new(self.grid.len());
         new_grid.grid[head.x as usize][head.y as usize] = 'H';
         for (idx, tail) in tail.iter().enumerate() {
-            new_grid.grid[tail.x as usize][tail.y as usize] = char::from_digit((idx + 1) as u32, 10).unwrap();
+            new_grid.grid[tail.x as usize][tail.y as usize] =
+                char::from_digit((idx + 1) as u32, 10).unwrap();
         }
         self.grid = new_grid.grid
     }
 
     fn print(&self) {
         println!("");
-        let f = self.grid.iter().rev().map(|vector|{
-            vector.iter().collect::<String>()
-        }).collect::<Vec<_>>();
+        let f = self
+            .grid
+            .iter()
+            .rev()
+            .map(|vector| vector.iter().collect::<String>())
+            .collect::<Vec<_>>();
         for v in f {
             println!("{}", v);
         }
@@ -238,7 +263,7 @@ fn main() {
     let mut tail = Tail::new();
     grid.update(&head, &tail);
 
-    let moves = parse_lines("../sample_input_1.txt");
+    let moves = parse_lines("../input.txt");
     for m in &moves {
         println!("{:?}", m);
         let mut m = m.consume();
@@ -270,7 +295,7 @@ fn main() {
                 tail.follow(&head, steps);
             }
             for i in 1..tails.len() {
-                let previous_tail = tails[i-1].like_head();
+                let previous_tail = tails[i - 1].like_head();
                 let tail = tails.get_mut(i).unwrap();
                 if tail.too_far_away(&previous_tail) {
                     tail.follow(&previous_tail, steps)
@@ -281,78 +306,9 @@ fn main() {
         }
     }
 
-    println!("Tail location count: {}", tails.last().unwrap().unique_loc());
-    
-
+    println!(
+        "Tail location count: {}",
+        tails.last().unwrap().unique_loc()
+    );
 }
 
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-
-    #[test]
-    fn test_tail_too_far_away() {
-        // too far away
-        let head = Head::from_xy(1, 1);
-        let tail = Tail::from_xy(3, 1);
-        assert!(tail.too_far_away(head));
-
-        let head = Head::from_xy(1, 3);
-        let tail = Tail::from_xy(1, 1);
-        assert!(tail.too_far_away(head));
-
-        // not too far away
-        let head = Head::from_xy(1, 2);
-        let tail = Tail::from_xy(1, 1);
-        assert!(!tail.too_far_away(head));
-
-        let head = Head::from_xy(1, 2);
-        let tail = Tail::from_xy(2, 1);
-        assert!(!tail.too_far_away(head));
-
-        let head = Head::from_xy(1, 1);
-        let tail = Tail::from_xy(1, 1);
-        assert!(!tail.too_far_away(head));
-    }
-
-    #[test]
-    fn test_normal_follow() {
-        let mut head = Head::new();
-        let mut tail = Tail::new();
-        
-        let mut m = Move::Up(2).consume();
-        let m1 = m.pop().unwrap();
-
-        head.move_it(m1);
-        assert_eq!(head, Head::from_xy(0, 1));
-        assert!(!tail.too_far_away(head));
-
-        let m2 = m.pop().unwrap();
-        head.move_it(m2);
-
-        assert_eq!(head, Head::from_xy(0, 2));
-        assert!(tail.too_far_away(head));
-
-        tail.follow(head, m2);
-
-        assert_eq!(0, tail.x);
-        assert_eq!(1, tail.y);
-        assert!(!tail.too_far_away(head));
-        assert_eq!(2, tail.history.len());
-    }
-
-    #[test]
-    fn test_diag_follow() {
-        let direction = Move::Up(1);
-        let head = Head::from_xy(2, 3);
-        let mut tail = Tail::from_xy(1, 1);
-
-        assert!(tail.too_far_away(head));
-
-        tail.follow(head, direction);
-        assert_eq!(2, tail.x);
-        assert_eq!(2, tail.y);
-        assert!(!tail.too_far_away(head));
-    }
-}
