@@ -121,30 +121,6 @@ impl Tail {
             .any(|cord| cord.abs() > 1)
     }
 
-    fn move_it(&mut self, steps: Move) {
-        let x = self.x;
-        let y = self.y;
-        match steps {
-            Move::Down(n) => {
-                let x = x - n;
-                self.x = x;
-            }
-            Move::Up(n) => {
-                let x = x + n;
-                self.x = x;
-            }
-            Move::Right(n) => {
-                let y = y + n;
-                self.y = y;
-            }
-            Move::Left(n) => {
-                let y = y - n;
-                self.y = y;
-            }
-        }
-        self.history.push((self.x, self.y));
-    }
-
     fn follow_it(&mut self, head: &Head) {
         let diff_x = head.x - self.x;
         let diff_y = head.y - self.y;
@@ -164,7 +140,7 @@ impl Tail {
         self.history.push((self.x, self.y));
     }
 
-    fn follow(&mut self, head: &Head, direction: Move) {
+    fn follow(&mut self, head: &Head) {
         match [head.x - self.x, head.y - self.y]
             .iter()
             .any(|cord| cord.abs() == 0)
@@ -271,7 +247,7 @@ fn main() {
             let steps = m.pop().unwrap();
             head.move_it(steps);
             if tail.too_far_away(&head) {
-                tail.follow(&head, steps);
+                tail.follow(&head);
             }
             //grid.update(&head, &tail);
             //grid.print();
@@ -292,13 +268,13 @@ fn main() {
             head.move_it(steps);
             let tail = tails.get_mut(0).unwrap();
             if tail.too_far_away(&head) {
-                tail.follow(&head, steps);
+                tail.follow(&head);
             }
             for i in 1..tails.len() {
                 let previous_tail = tails[i - 1].like_head();
                 let tail = tails.get_mut(i).unwrap();
                 if tail.too_far_away(&previous_tail) {
-                    tail.follow(&previous_tail, steps)
+                    tail.follow(&previous_tail)
                 }
             }
             //grid.update_multitail(&head, &tails);
